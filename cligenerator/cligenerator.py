@@ -25,8 +25,6 @@
 # FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-import os
 import sys
 import inspect
 from textwrap import dedent
@@ -63,46 +61,52 @@ class CLIGenerator(object):
 
         else:
             raise TypeError(
-                'module_or_function must be a valid module object or a function object!')
+                    'module_or_function must be a valid object.'
+                    )
 
         # Base tool code
         # Code is built out of these by the generate* functions
 
         self.base_code = \
             dedent('''\
-		import argparse
-		import sys
-		{additional_imports}
+        import argparse
+        import sys
+        {additional_imports}
 
-		class {class_name}(object):
+        class {class_name}(object):
 
-			def __init__(self):
+            def __init__(self):
 
-				parser = argparse.ArgumentParser(
-					description='{description}',
-					formatter_class=argparse.RawTextHelpFormatter,
-					usage='%(prog)s command options',
-					allow_abbrev=False)
+                parser = argparse.ArgumentParser(
+                    description='{description}',
+                    formatter_class=argparse.RawTextHelpFormatter,
+                    usage='%(prog)s command options',
+                    allow_abbrev=False)
 
-				parser.add_argument('command', help='Command to run.')
+                parser.add_argument('command', help='Command to run.')
 
-				args = parser.parse_args(sys.argv[1:2])  # Ignore options
+                args = parser.parse_args(sys.argv[1:2])  # Ignore options
 
-				self._one_func_mode = False
+                self._one_func_mode = False
 
-				if not hasattr(self, args.command.replace('.', '_')):
-					print('Unrecognized command!')
-					sys.exit(1)
+                if not hasattr(self, args.command.replace('.', '_')):
+                    print('Unrecognized command!')
+                    sys.exit(1)
 
-				getattr(self, args.command.replace('.', '_'))()
+                getattr(self, args.command.replace('.', '_'))()
 
 
-		''').format(description=self.description,
-              usage=self.usage,
-              additional_imports='ADDITIONAL_IMPORTS/:',
-              # Don't replace now, since it'll be used again later
-              class_name=self.name.capitalize()\
-              .replace('-', '_').replace('.', '_') + 'CLI')
+        ''').format(
+                description=self.description,
+                usage=self.usage,
+                additional_imports='ADDITIONAL_IMPORTS/:',
+                # Don't replace now, since it'll be used again later
+                class_name=self.name.capitalize().replace(
+                    '-', '_'
+                    ).replace(
+                        '.', '_'
+                        ) + 'CLI'
+                    )
 
     def _object_tree(self, obj):
 
@@ -218,20 +222,20 @@ class CLIGenerator(object):
         self._func_name = func_name
 
         template = '''\
-			def {name}(self):
+            def {name}(self):
 
-				parser = argparse.ArgumentParser(description='{description}')
+                parser = argparse.ArgumentParser(description='{description}')
 
-				{arg_defs}
+                {arg_defs}
 
-				if self._one_func_mode:
-					args = parser.parse_args(sys.argv[1:])
+                if self._one_func_mode:
+                    args = parser.parse_args(sys.argv[1:])
 
-				else:
-					args = parser.parse_args(sys.argv[2:])
+                else:
+                    args = parser.parse_args(sys.argv[2:])
 
-				{function_call}
-		'''
+                {function_call}
+        '''
 
         arg_template = '''parser.add_argument('{arg_name}'{additional_opts})'''
 
@@ -254,7 +258,7 @@ class CLIGenerator(object):
                 additional_opts += ', action=\'store_true\''
 
             if option_type == 'list':
-                additional_opts += ', nargs=\'*\''  
+                additional_opts += ', nargs=\'*\''
                 # nargs=* is zero or more values
 
             if option_type == 'dict':
@@ -262,7 +266,11 @@ class CLIGenerator(object):
 
             if not required:
                 additional_opts += ', default={}'.format(
-                    "'{}'".format(func_defaults[i]) if isinstance(func_defaults[i], str) else func_defaults[i])
+                    "'{}'".format(
+                        func_defaults[i]) if isinstance(
+                            func_defaults[i], str
+                            ) else func_defaults[i]
+                        )
 
             if i.endswith('_') and not required:
                 additional_opts += ', dest=\'{}\''.format(i[:])
@@ -302,7 +310,9 @@ class CLIGenerator(object):
 
             for i in self.additional_imports:
                 self.additional_imports[self.additional_imports.index(
-                    i)] = 'import {}'.format(i) if not i.startswith('import ') else i
+                    i)] = 'import {}'.format(
+                            i) if not i.startswith(
+                                    'import ') else i
 
             code = code.replace(
                 'ADDITIONAL_IMPORTS/:',
@@ -330,7 +340,11 @@ class CLIGenerator(object):
 
             _recurse_code_update(module_tree)
 
-            call_obj = self.name.capitalize().replace('-', '_').replace('.', '_') + 'CLI'
+            call_obj = self.name.capitalize().replace(
+                    '-', '_'
+                    ).replace(
+                            '.', '_'
+                            ) + 'CLI'
 
         else:
             if hasattr(sys, 'ps1'):
@@ -369,8 +383,11 @@ class CLIGenerator(object):
                     self._name), 'def {}()'.format(
                     '__' + self._name + 'CLI'))
 
-            function_code = function_code.replace('argparse.ArgumentParser(description=\'\')',
-                                                  'argparse.ArgumentParser(description=\'{}\')'.format(self.description))  # Won't do anything if specified already
+            function_code = function_code.replace(
+                    'argparse.ArgumentParser(description=\'\')',
+                    'argparse.ArgumentParser(description=\'{}\')'.format(
+                        self.description)
+                    )  # Won't do anything if specified already
 
             code = code.split(
                 'class {}(object)'.format(
@@ -381,15 +398,21 @@ class CLIGenerator(object):
                         '_') + 'CLI'),
                 1)[0]
 
-            to_remove = '''\tif self._one_func_mode:\n\t\targs = parser.parse_args(sys.argv[1:])\n\n\telse:\n\t\targs = parser.parse_args(sys.argv[2:])'''
+            to_remove = '''\tif self._one_func_mode:\
+                \n\t\targs = parser.parse_args(sys.argv[1:])\
+                \n\n\telse:\n\t\targs = parser.parse_args(sys.argv[2:])'''
 
             code += function_code
 
             code = code.replace(to_remove, '\n\targs = parser.parse_args()')
 
             code = code.replace('REPL_W/:',
-                                'try:\n\t\tprint({}(**vars(args)))\n\texcept:\n\t\tprint({}(**vars(args)))'
-                                .format(self._func_name, self._func_name.split('.')[-1]))
+                                'try:\n\t\tprint({}(**vars(args)))\
+                                        \n\texcept:\
+                                        \n\t\tprint({}(**vars(args)))'
+                                .format(
+                                    self._func_name,
+                                    self._func_name.split('.')[-1]))
 
             code += '\n\n'
 
@@ -397,8 +420,8 @@ class CLIGenerator(object):
 
         code += dedent('''
 
-		if __name__ == '__main__':
-			{}()
-		'''.format(call_obj))
+        if __name__ == '__main__':
+            {}()
+        '''.format(call_obj))
 
         return code
